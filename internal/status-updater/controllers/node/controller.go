@@ -124,6 +124,24 @@ func (c *NodeController) pruneTopologyConfigMaps() error {
 		multiErr = multierror.Append(multiErr, c.pruneTopologyConfigMap(&cm, ok))
 	}
 
+	// Create missing topology ConfigMaps for existing labeled nodes
+	existingCMMap := make(map[string]bool)
+	for _, cm := range nodeTopologyCms.Items {
+		existingCMMap[cm.Name] = true
+	}
+
+	for _, node := range gpuNodes.Items {
+		expectedCMName := topology.GetNodeTopologyCMName(node.Name)
+		if !existingCMMap[expectedCMName] {
+			log.Printf("Creating missing topology ConfigMap for existing labeled node: %s", node.Name)
+			if err = c.handler.HandleAdd(&node); err != nil {
+				multiErr = multierror.Append(multiErr, err)
+			}
+		}
+	}
+
+	return multiErr
+
 	return nil
 }
 
