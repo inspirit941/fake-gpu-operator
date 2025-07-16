@@ -118,7 +118,7 @@ func (c *NodeController) pruneTopologyConfigMaps() error {
 		validNodeTopologyCMMap[topology.GetNodeTopologyCMName(node.Name)] = true
 	}
 
-	var multiErr error
+	var multiErr *multierror.Error
 	for _, cm := range nodeTopologyCms.Items {
 		_, ok := validNodeTopologyCMMap[cm.Name]
 		multiErr = multierror.Append(multiErr, c.pruneTopologyConfigMap(&cm, ok))
@@ -140,9 +140,7 @@ func (c *NodeController) pruneTopologyConfigMaps() error {
 		}
 	}
 
-	return multiErr
-
-	return nil
+	return multiErr.ErrorOrNil()
 }
 
 func (c *NodeController) pruneTopologyConfigMap(cm *v1.ConfigMap, isValidNodeTopologyCM bool) error {
